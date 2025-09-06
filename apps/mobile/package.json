@@ -1,0 +1,22 @@
+{
+  "name": "@washlink/mobile",
+  "private": true,
+  "scripts": {
+    "dev": "expo start",
+    "build": "expo build",
+    "start": "expo start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "expo": "~49.0.10",
+    "react": "18.2.0",
+    "react-native": "0.72.6",
+    "axios": "^1.7.2",
+    "@washlink/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.21",
+    "@types/react-native": "0.72.3",
+    "typescript": "^5.2.2"
+  }
+}

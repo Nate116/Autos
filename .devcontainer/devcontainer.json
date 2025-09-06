@@ -1,0 +1,25 @@
+{
+  "name": "WashLink",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "features": {
+    "ghcr.io/devcontainers/features/postgres:1": { "version": "16", "password": "postgres", "db": "washlink" },
+    "ghcr.io/devcontainers/features/redis:1": {}
+  },
+  "forwardPorts": [3000, 4000, 19006, 5432, 6379],
+  "portsAttributes": {
+    "3000": {"label": "Next.js Web", "onAutoForward": "openBrowser"},
+    "4000": {"label": "API (NestJS)", "onAutoForward": "openBrowser"},
+    "19006": {"label": "Expo Web", "onAutoForward": "openBrowser"}
+  },
+  "containerEnv": {
+    "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/washlink?schema=public",
+    "API_PORT": "4000",
+    "API_ORIGIN": "http://localhost:4000",
+    "WEB_ORIGIN": "http://localhost:3000",
+    "NEXT_PUBLIC_API_URL": "http://localhost:4000",
+    "EXPO_PUBLIC_API": "http://localhost:4000"
+  },
+  "postCreateCommand": "corepack enable && pnpm install && pnpm -C packages/db prisma generate && pnpm -C packages/db prisma db push && pnpm -C packages/db tsx prisma/seed.ts",
+  "postStartCommand": "echo 'Ready ✅ — open the Terminal and run: pnpm dev:all'",
+  "customizations": { "vscode": { "extensions": ["Prisma.prisma", "dbaeumer.vscode-eslint"] } }
+}
