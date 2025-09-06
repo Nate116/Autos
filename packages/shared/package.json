@@ -1,0 +1,15 @@
+{
+  "name": "@washlink/shared",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json -w",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}

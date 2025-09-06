@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  customer
+  mart
+  courier
+  admin
+}
+
+enum OrderStatus {
+  searching_mart
+  awaiting_pickup
+  picked_up
+  in_progress
+  ready
+  out_for_delivery
+  completed
+  cancelled
+  refunded
+}
+
+enum ServiceType {
+  washFold
+  dryClean
+  iron
+  stainRemoval
+}
+
+model User {
+  id          String   @id @default(cuid())
+  role        Role
+  name        String
+  phone       String   @unique
+  email       String?  @unique
+  passwordHash String
+  kycStatus   String?  // pending/approved/rejected
+  addresses   Address[]
+  mart        Mart?
+  courier     Courier?
+  reviews     Review[]
+  createdAt   DateTime @default(now())
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  user      User?   @relation(fields: [userId], references: [id])
+  userId    String?
+  mart      Mart?   @relation(fields: [martId], references: [id])
+  martId    String?
+  label     String
+  street    String
+  city      String
+  state     String
+  latitude  Float
+  longitude Float
+}
+
+model Mart {
+  id               String   @id @default(cuid())
+  ownerUser        User     @relation(fields: [ownerUserId], references: [id])
+  ownerUserId      String   @unique
+  displayName      String
+  description      String?
+  servicesOffered  Json?
+  operatingHours   Json?
+  basePriceList    Json?
+  capacityKgPerHr  Int      @default(50)
+  deliveryRadiusKm Int      @default(5)
+  kycDocs          Json?
+  ratingAvg        Float    @default(0)
+  ratingCount      Int      @default(0)
+  isActive         Boolean  @default(true)
+  city             String
+  geoLat           Float
+  geoLng           Float
+  services         Service[]
+  orders           Order[]
+  payouts          Payout[]
+  address          Address?
+  createdAt        DateTime @default(now())
+}
+
+model Courier {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  vehicleType String?
+  plateNo     String?
+  active      Boolean  @default(false)
+  currentLat  Float? 
+  currentLng  Float?
+  pickupOrders  Order[] @relation("pickupCourier")
+  dropoffOrders Order[] @relation("dropoffCourier")
+}
+
+model Service {
+  id              String      @id @default(cuid())
+  mart            Mart        @relation(fields: [martId], references: [id])
+  martId          String
+  type            ServiceType
+  basePrice       Int         @default(0) // in kobo
+  perKgPrice      Int?        // in kobo
+  perItemPrice    Int?        // in kobo
+  turnaroundHours Int         @default(24)
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  code             String      @unique
+  customer         User        @relation(fields: [customerId], references: [id])
+  customerId       String
+  mart             Mart        @relation(fields: [martId], references: [id])
+  martId           String
+  courierPickup    Courier?    @relation("pickupCourier", fields: [courierPickupId], references: [id])
+  courierPickupId  String?
+  courierDropoff   Courier?    @relation("dropoffCourier", fields: [courierDropoffId], references: [id])
+  courierDropoffId String?
+  status           OrderStatus @default(searching_mart)
+  pickupAddress    Address     @relation("pickupAddress", fields: [pickupAddressId], references: [id])
+  pickupAddressId  String
+  dropoffAddress   Address     @relation("dropoffAddress", fields: [dropoffAddressId], references: [id])
+  dropoffAddressId String
+  pickupWindowStart DateTime
+  pickupWindowEnd   DateTime
+  dropoffWindowStart DateTime
+  dropoffWindowEnd   DateTime
+  items            Json        // {categories, qty, kg}
+  subtotal         Int         // in kobo
+  pickupFee        Int         @default(0)
+  deliveryFee      Int         @default(0)
+  discounts        Int         @default(0)
+  tax              Int         @default(0)
+  total            Int
+  paymentStatus    String      @default("pending")
+  timeline         Json?
+  payments         Payment[]
+  review           Review?
+  createdAt        DateTime    @default(now())
+}
+
+model Review {
+  id        String  @id @default(cuid())
+  byUser    User    @relation(fields: [byUserId], references: [id])
+  byUserId  String
+  mart      Mart?   @relation(fields: [martId], references: [id])
+  martId    String?
+  courier   Courier? @relation(fields: [courierId], references: [id])
+  courierId String?
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String  @unique
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id        String  @id @default(cuid())
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String
+  provider  String
+  ref       String  @unique
+  amount    Int
+  currency  String  @default("NGN")
+  status    String
+  paidAt    DateTime?
+  raw       Json?
+}
+
+model Payout {
+  id        String  @id @default(cuid())
+  mart      Mart    @relation(fields: [martId], references: [id])
+  martId    String
+  amount    Int
+  status    String  @default("pending")
+  createdAt DateTime @default(now())
+}
+
+model Promo {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  type        String   // percent | amount
+  value       Int
+  city        String?
+  minTotal    Int?
+  maxDiscount Int?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  active      Boolean  @default(true)
+}
